@@ -19,6 +19,8 @@ func HttpTest() http.HandlerFunc {
 
 func HttpGetUsers(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
 		users, err := handlers.GetUsers(db)
 		if err != nil {
 			_, err := w.Write([]byte(err.Error()))
@@ -28,7 +30,26 @@ func HttpGetUsers(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		_, err = w.Write([]byte(fmt.Sprintf("%v", users)))
+		type UserNonPassword struct {
+			ID   int    `json:"id"`
+			Name string `json:"name"`
+		}
+
+		usersNonPassword := []UserNonPassword{}
+		for _, user := range users {
+			usersNonPassword = append(usersNonPassword, UserNonPassword{
+				ID:   user.ID,
+				Name: user.Name,
+			})
+		}
+
+		json, err := json.Marshal(usersNonPassword)
+
+		_, err = w.Write(json)
+		if err != nil {
+			fmt.Println("Error: ", err)
+			return
+		}
 	}
 }
 
