@@ -12,7 +12,7 @@ type User struct {
 }
 
 func GetUsers(db *sql.DB) ([]*User, error) {
-	rows, err := db.Query("SELECT * FROM users")
+	rows, err := db.Query("SELECT id, name FROM users")
 	if err != nil {
 		return nil, err
 	}
@@ -26,7 +26,7 @@ func GetUsers(db *sql.DB) ([]*User, error) {
 	users := []*User{}
 	for rows.Next() {
 		user := User{}
-		err := rows.Scan(&user.ID, &user.Name, &user.PasswordHash)
+		err := rows.Scan(&user.ID, &user.Name)
 		if err != nil {
 			return nil, err
 		}
