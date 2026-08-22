@@ -1,6 +1,7 @@
 package main
 
 import (
+	"SimpleUserBackend/handlers"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -17,47 +18,6 @@ const (
 
 // For database
 // go get modernc.org/sqlite
-
-type User struct {
-	ID           int    `json:"id"`
-	Name         string `json:"name"`
-	PasswordHash string `json:"password_hash"`
-}
-
-func getUsers(db *sql.DB) ([]*User, error) {
-	rows, err := db.Query("SELECT * FROM users")
-	if err != nil {
-		return nil, err
-	}
-	defer func(rows *sql.Rows) {
-		err := rows.Close()
-		if err != nil {
-			fmt.Println("error closing rows")
-		}
-	}(rows)
-
-	users := []*User{}
-	for rows.Next() {
-		user := User{}
-		err := rows.Scan(&user.ID, &user.Name, &user.PasswordHash)
-		if err != nil {
-			return nil, err
-		}
-		users = append(users, &user)
-	}
-
-	return users, nil
-}
-
-func getUser(db *sql.DB, id int) (*User, error) {
-	row := db.QueryRow("SELECT * FROM users WHERE id = ?", id)
-	user := User{}
-	err := row.Scan(&user.ID, &user.Name, &user.PasswordHash)
-	if err != nil {
-		return nil, err
-	}
-	return &user, nil
-}
 
 func loadDB() (*sql.DB, error) {
 	db, err := sql.Open("sqlite", dbFile)
@@ -83,7 +43,7 @@ func httpTest() http.HandlerFunc {
 
 func httpGetUsers(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		users, err := getUsers(db)
+		users, err := handlers.GetUsers(db)
 		if err != nil {
 			_, err := w.Write([]byte(err.Error()))
 			if err != nil {
@@ -100,7 +60,7 @@ func httpGetUsers(db *sql.DB) http.HandlerFunc {
 func httpCreateUser(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
-			var user User
+			var user handlers.User
 			err := json.NewDecoder(r.Body).Decode(&user)
 			if err != nil {
 				return
