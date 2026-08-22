@@ -37,7 +37,7 @@ func GetUsers(db *sql.DB) ([]*User, error) {
 }
 
 func GetUser(db *sql.DB, id int) (*User, error) {
-	row := db.QueryRow("SELECT * FROM users WHERE id = ?", id)
+	row := db.QueryRow("SELECT  id, name FROM users WHERE id = ?", id)
 	user := User{}
 	err := row.Scan(&user.ID, &user.Name, &user.PasswordHash)
 	if err != nil {
