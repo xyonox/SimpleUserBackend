@@ -54,6 +54,8 @@ func run() error {
 	http.HandleFunc("/users", routes.HttpGetUsers(db))
 	http.HandleFunc("/user/create", routes.HttpCreateUser(db))
 
+	// TODO: Login logic => token, simple auth test route
+
 	fmt.Println("server started on port ", port)
 
 	return http.ListenAndServe(fmt.Sprintf(":%v", port), nil)
