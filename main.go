@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -63,7 +64,7 @@ func loadDB() (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, err = db.Exec("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT, password_hash TEXT)")
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE, password_hash TEXT)")
 	if err != nil {
 		return nil, err
 	}
@@ -95,6 +96,30 @@ func httpGetUsers(db *sql.DB) http.HandlerFunc {
 	}
 }
 
+// TODO: move to a function
+func httpCreateUser(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			var user User
+			err := json.NewDecoder(r.Body).Decode(&user)
+			if err != nil {
+				return
+			}
+			// TODO: Password hash is not working
+			fmt.Println(user.Name, user.PasswordHash)
+			_, err = db.Exec("INSERT INTO users (name, password_hash) VALUES (?, ?)", user.Name, user.PasswordHash)
+			if err != nil {
+				_, err := w.Write([]byte(err.Error()))
+				if err != nil {
+					return
+				}
+				return
+			}
+			w.Write([]byte("User created"))
+		}
+	}
+}
+
 func run() error {
 
 	db, err := loadDB()
@@ -116,6 +141,7 @@ func run() error {
 
 	http.HandleFunc("/helloworld", httpTest())
 	http.HandleFunc("/users", httpGetUsers(db))
+	http.HandleFunc("/user/create", httpCreateUser(db))
 
 	fmt.Println("server started on port ", port)
 
