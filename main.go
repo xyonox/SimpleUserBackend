@@ -1,10 +1,12 @@
 package main
 
 import (
+	"SimpleUserBackend/handlers"
 	"SimpleUserBackend/routes"
 	"database/sql"
 	"errors"
 	"fmt"
+	"math/bits"
 	"net/http"
 
 	_ "modernc.org/sqlite"
@@ -61,8 +63,64 @@ func run() error {
 	return http.ListenAndServe(fmt.Sprintf(":%v", port), nil)
 }
 
-func main() {
+/*func main() {
 	if err := run(); err != nil {
 		panic(err)
+	}
+}
+*/
+
+func main() {
+
+	passwords := []string{
+		"WhatsUp",
+		"whatsup",
+		"WHATSUP",
+		"wHAtsuP",
+		"whbtsup",
+		"whatsvp",
+		"xhatsup",
+		"zhatsup",
+		"xhbtups",
+	}
+
+	originalHash, salt, err := handlers.HashPassword(passwords[0])
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("Original: %s\n", passwords[0])
+	fmt.Printf("Hash:     %x\n\n", originalHash)
+	fmt.Println(passwords[0])
+
+	for _, password := range passwords[1:] {
+
+		hash, err := handlers.HashPasswordWithSalt(password, salt)
+		if err != nil {
+			panic(err)
+		}
+
+		differentBits := 0
+
+		minLength := len(originalHash)
+		if len(hash) < minLength {
+			minLength = len(hash)
+		}
+
+		for i := 0; i < minLength; i++ {
+			differentBits += bits.OnesCount8(originalHash[i] ^ hash[i])
+		}
+
+		totalBits := len(originalHash) * 8
+		percentage := float64(differentBits) / float64(totalBits) * 100
+
+		fmt.Printf("Passwort: %s\n", password)
+		fmt.Printf("Hash:     %x\n", hash)
+		fmt.Println(hash)
+		fmt.Printf("Unterschiedliche Bits: %d / %d (%.2f%%)\n\n",
+			differentBits,
+			totalBits,
+			percentage,
+		)
 	}
 }
