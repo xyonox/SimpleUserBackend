@@ -43,9 +43,9 @@ func HttpGetUsers(db *sql.DB) http.HandlerFunc {
 			})
 		}
 
-		json, err := json.Marshal(usersNonPassword)
+		jsonBody, err := json.Marshal(usersNonPassword)
 
-		_, err = w.Write(json)
+		_, err = w.Write(jsonBody)
 		if err != nil {
 			fmt.Println("Error: ", err)
 			return
@@ -62,8 +62,16 @@ func HttpCreateUser(db *sql.DB) http.HandlerFunc {
 			if err != nil {
 				return
 			}
-			// TODO: Password hash is not working
-			fmt.Println(user.Name, user.PasswordHash)
+
+			hashedPassword, err := handlers.HashPassword(user.PasswordHash)
+			if err != nil {
+				if err != nil {
+					fmt.Println("Error: ", err)
+					return
+				}
+			}
+			user.PasswordHash = hashedPassword
+
 			_, err = db.Exec("INSERT INTO users (name, password_hash) VALUES (?, ?)", user.Name, user.PasswordHash)
 			if err != nil {
 				_, err := w.Write([]byte(err.Error()))
