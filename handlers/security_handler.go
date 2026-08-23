@@ -23,6 +23,13 @@ func HashPasswordWithSalt(password string, salt []byte) ([]byte, error) {
 		finalHash = saltedPasswordChar
 		for j := range states {
 			stateChar := states[j]
+			if j == 0 {
+				finalHash += states[j+1] + states[len(states)-1]
+			} else if j == len(states)-1 {
+				finalHash += states[0] + states[j-1]
+			} else {
+				finalHash += states[j+1] + states[j-1]
+			}
 			if stateChar == finalHash {
 				val := finalHash*stateChar + 4
 				if val > 127 {
