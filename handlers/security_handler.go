@@ -15,18 +15,22 @@ func HashPasswordWithSalt(password string, salt []byte) ([]byte, error) {
 	for _, saltChar := range saltedPassword {
 		states = append(states, saltChar)
 	}
+	index := 0
+	maxSize := len(salt)
 
-	var hashedPassword []byte
+	hashedPassword := make([]byte, maxSize)
 
 	for _, saltedPasswordChar := range saltedPassword {
 		var finalHash byte
 		finalHash = saltedPasswordChar
+
 		for j := range states {
 			stateChar := states[j]
 			if j == 0 {
 				finalHash += states[j+1] + states[len(states)-1]
+				states[0] = states[j+1] + states[len(states)-1]*states[j+5]
 			} else if j == len(states)-1 {
-				finalHash += states[0] + states[j-1]
+				finalHash += states[0] + states[j-1]*states[j-5]
 			} else {
 				finalHash += states[j+1] + states[j-1]
 			}
@@ -38,6 +42,9 @@ func HashPasswordWithSalt(password string, salt []byte) ([]byte, error) {
 				} else if val%2 == 0 {
 					finalHash = val - stateChar
 					states[j] = val + stateChar
+				} else if (val-stateChar)%2 == 0 {
+					finalHash = val + stateChar*4
+					states[j] = val - (val ^ (stateChar * 22))
 				} else {
 					finalHash = val ^ stateChar
 					states[j] = val + (val ^ (stateChar * 2))
@@ -46,7 +53,7 @@ func HashPasswordWithSalt(password string, salt []byte) ([]byte, error) {
 				val := finalHash - stateChar
 				if val > 127 {
 					finalHash = val ^ stateChar
-					states[j] = val - stateChar
+					states[j] = val - (stateChar * 30)
 				} else if val%2 == 0 {
 					finalHash = val + stateChar
 					states[j] = (val + stateChar) * 2
@@ -61,25 +68,28 @@ func HashPasswordWithSalt(password string, salt []byte) ([]byte, error) {
 					states[j] = val + stateChar
 				} else if val%2 == 0 {
 					finalHash = val - stateChar
-					states[j] = (val - stateChar) * 2
+					states[j] = (val - stateChar) * 5
 				} else {
 					finalHash = val ^ stateChar
-					states[j] = (val + stateChar) * (val ^ (stateChar * 2))
+					states[j] = (val + stateChar) * (val ^ (stateChar * 20))
 				}
 			}
 		}
-		hashedPassword = append(hashedPassword, finalHash)
+		if index == maxSize {
+			index = 0
+		}
+		hashedPassword[index] += finalHash
+		index++
 	}
 
 	return hashedPassword, nil
 }
 
 func HashPassword(password string) ([]byte, []byte, error) {
-	salt := make([]byte, 16)
+	salt := make([]byte, 32)
 	if _, err := io.ReadFull(rand.Reader, salt); err != nil {
 		return nil, nil, err
 	}
-
 	hashedPassword, err := HashPasswordWithSalt(password, salt)
 
 	return hashedPassword, salt, err
