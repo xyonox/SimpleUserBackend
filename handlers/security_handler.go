@@ -78,7 +78,7 @@ func HashPassword(password string) ([]byte, []byte, error) {
 	return hashedPassword, salt, err
 }
 
-func CheckPasswordHash(password string, hashed []byte, salt []byte) bool {
+func VerifyPasswordHash(password string, hashed []byte, salt []byte) bool {
 	hashedCheck, err := HashPasswordWithSalt(password, salt)
 	if err != nil {
 		fmt.Println("Error hashing password: ", err)
