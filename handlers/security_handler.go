@@ -15,7 +15,7 @@ func HashPassword(password string) (string, error) {
 	return hash, nil
 }
 
-func generateToken() (string, error) {
+func GenerateToken() (string, error) {
 	bytes := make([]byte, 32)
 
 	if _, err := rand.Read(bytes); err != nil {
