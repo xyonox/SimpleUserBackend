@@ -36,12 +36,22 @@ func GetUsers(db *sql.DB) ([]*User, error) {
 	return users, nil
 }
 
-func GetUser(db *sql.DB, id int) (*User, error) {
-	row := db.QueryRow("SELECT  id, name FROM users WHERE id = ?", id)
+func GetUser(db *sql.DB, id int) (User, error) {
+	row := db.QueryRow("SELECT * FROM users WHERE id = ?", id)
 	user := User{}
 	err := row.Scan(&user.ID, &user.Name, &user.PasswordHash)
 	if err != nil {
-		return nil, err
+		return user, err
 	}
-	return &user, nil
+	return user, nil
+}
+
+func GetUserByName(db *sql.DB, name string) (User, error) {
+	row := db.QueryRow("SELECT * FROM users WHERE name = ?", name)
+	user := User{}
+	err := row.Scan(&user.ID, &user.Name, &user.PasswordHash)
+	if err != nil {
+		return user, err
+	}
+	return user, nil
 }
