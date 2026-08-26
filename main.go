@@ -15,6 +15,26 @@ const (
 	port   = 8080
 )
 
+func cors(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+		if origin == "http://localhost:5500" || origin == "http://127.0.0.1:5500" {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+			w.Header().Add("Vary", "Origin")
+		}
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 // For database
 // go get modernc.org/sqlite
 
@@ -60,7 +80,7 @@ func run() error {
 
 	fmt.Println("server started on port ", port)
 
-	return http.ListenAndServe(fmt.Sprintf(":%v", port), nil)
+	return http.ListenAndServe(fmt.Sprintf(":%v", port), cors(http.DefaultServeMux))
 }
 
 func main() {
