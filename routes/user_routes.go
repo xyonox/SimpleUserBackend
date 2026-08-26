@@ -12,8 +12,36 @@ func HttpTest() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		_, err := w.Write([]byte("Hello, world!"))
 		if err != nil {
+			fmt.Println("Error: ", err)
 			return
 		}
+	}
+}
+
+func HttpLogin() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.SetCookie(w, &http.Cookie{Name: "test", Value: "123"})
+
+		fmt.Println("test")
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+func HttpAuthTest() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		coockie, err := r.Cookie("test")
+		if err != nil {
+			_, err := w.Write([]byte("no cookie"))
+			if err != nil {
+				return
+			}
+			return
+		}
+		_, err = w.Write([]byte(coockie.Value))
+		if err != nil {
+			fmt.Println("Error: ", err)
+		}
+		fmt.Println("cookie: ", coockie.Value)
 	}
 }
 
