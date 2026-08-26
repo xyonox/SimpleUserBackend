@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"crypto/rand"
+	"encoding/base64"
+
 	"github.com/alexedwards/argon2id"
 )
 
@@ -10,6 +13,16 @@ func HashPassword(password string) (string, error) {
 		return "", err
 	}
 	return hash, nil
+}
+
+func generateToken() (string, error) {
+	bytes := make([]byte, 32)
+
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+
+	return base64.RawURLEncoding.EncodeToString(bytes), nil
 }
 
 func VerifyPassword(password, hash string) (bool, error) {
