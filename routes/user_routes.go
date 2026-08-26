@@ -10,6 +10,7 @@ import (
 
 func HttpTest() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
 		_, err := w.Write([]byte("Hello, world!"))
 		if err != nil {
 			fmt.Println("Error: ", err)
@@ -36,7 +37,7 @@ func HttpLogin() http.HandlerFunc {
 			Value:    token,
 			Path:     "/",
 			HttpOnly: true,
-			Secure:   true, // bei lokaler HTTP-Entwicklung vorübergehend false
+			Secure:   false, // lokal über HTTP; in Produktion mit HTTPS auf true setzen
 			SameSite: http.SameSiteLaxMode,
 			MaxAge:   60 * 60 * 24, // 24 Stunden
 		})
