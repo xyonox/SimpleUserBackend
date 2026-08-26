@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SimpleUserBackend · API Playground</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">SimpleUserBackend</p>
+        <h1>Dein kleiner API-Playground.</h1>
+        <p class="subtitle">Registrierung, Login, Authentifizierung und Benutzerliste an einem Ort testen.</p>
+      </div>
+      <div class="status-pill"><span id="statusDot"></span><span id="statusText">Nicht authentifiziert</span></div>
+    </section>
+
+    <section class="toolbar card">
+      <label for="apiBase">API-Basis-URL</label>
+      <div class="toolbar-row">
+        <input id="apiBase" value="http://localhost:8080" spellcheck="false">
+        <button id="helloButton" class="button secondary">Verbindung testen</button>
+      </div>
+      <p class="hint">Das Frontend kann separat geöffnet werden. Bei einer anderen Origin muss dein Go-Backend CORS erlauben.</p>
+    </section>
+
+    <div id="message" class="message hidden"></div>
+
+    <section class="grid">
+      <div class="card panel">
+        <div class="tabs">
+          <button class="tab active" data-panel="loginPanel">Login</button>
+          <button class="tab" data-panel="registerPanel">Registrieren</button>
+        </div>
+
+        <form id="loginPanel" class="form-panel active">
+          <h2>Willkommen zurück</h2>
+          <p class="muted">Erzeugt aktuell eine Test-Session über <code>/user/login</code>.</p>
+          <label for="loginName">Name</label>
+          <input id="loginName" name="name" placeholder="max" autocomplete="username" required>
+          <label for="loginPassword">Passwort</label>
+          <input id="loginPassword" name="password" type="password" placeholder="••••••••" autocomplete="current-password" required>
+          <button class="button primary" type="submit">Einloggen</button>
+        </form>
+
+        <form id="registerPanel" class="form-panel">
+          <h2>Account anlegen</h2>
+          <p class="muted">Sendet aktuell <code>{ name, password_hash }</code> an <code>/user/create</code>.</p>
+          <label for="registerName">Name</label>
+          <input id="registerName" name="name" placeholder="max" autocomplete="username" required>
+          <label for="registerPassword">Passwort</label>
+          <input id="registerPassword" name="password" type="password" placeholder="mindestens 8 Zeichen" autocomplete="new-password" minlength="8" required>
+          <button class="button primary" type="submit">Registrieren</button>
+        </form>
+      </div>
+
+      <div class="card panel main-panel">
+        <div class="panel-heading">
+          <div><p class="eyebrow">Geschützter Bereich</p><h2>Dashboard</h2></div>
+          <button id="logoutButton" class="button ghost">Session löschen</button>
+        </div>
+        <p class="muted">Teste hier die Authentifizierung und die Benutzerabfrage.</p>
+        <div class="actions">
+          <button id="authButton" class="button secondary">Auth prüfen</button>
+          <button id="usersButton" class="button secondary">Benutzer laden</button>
+        </div>
+        <pre id="result" class="result">Noch keine Anfrage ausgeführt.</pre>
+      </div>
+    </section>
+
+    <footer>API Playground · Requests werden mit <code>credentials: include</code> gesendet.</footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
