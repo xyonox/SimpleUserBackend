@@ -20,11 +20,14 @@ document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', (
 }));
 
 document.querySelector('#registerPanel').addEventListener('submit', async event => {
-  event.preventDefault(); const form = new FormData(event.currentTarget);
+  event.preventDefault();
+  const formElement = event.currentTarget;
+  const form = new FormData(formElement);
   try {
     const body = { name: form.get('name'), password_hash: form.get('password') };
     const data = await request('/user/create', { method: 'POST', body: JSON.stringify(body) });
-    showMessage(data || 'Registrierung erfolgreich.'); event.currentTarget.reset();
+    showMessage(data || 'Registrierung erfolgreich.');
+    formElement.reset();
   } catch (error) { showMessage(error.message, true); }
 });
 
