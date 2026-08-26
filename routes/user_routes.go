@@ -19,8 +19,46 @@ func HttpTest() http.HandlerFunc {
 	}
 }
 
-func HttpLogin() http.HandlerFunc {
+func HttpLogin(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			_, err := w.Write([]byte("Method not allowed"))
+			if err != nil {
+				fmt.Println("Error: ", err)
+				return
+			}
+			return
+		}
+
+		var sendedUser handlers.User
+		err := json.NewDecoder(r.Body).Decode(&sendedUser)
+		if err != nil {
+			_, err := w.Write([]byte(err.Error()))
+			if err != nil {
+				fmt.Println("Error: ", err)
+			}
+		}
+
+		user, err := handlers.GetUserByName(db, sendedUser.Name)
+		if err != nil {
+			_, err := w.Write([]byte(err.Error()))
+			if err != nil {
+				fmt.Println("Error: ", err)
+			}
+			return
+		}
+
+		passwordVerify, err := handlers.VerifyPassword(sendedUser.PasswordHash, user.PasswordHash)
+		if err != nil {
+			return
+		}
+
+		if !passwordVerify {
+			_, err := w.Write([]byte("wrong password"))
+			if err != nil {
+				fmt.Println("Error: ", err)
+			}
+		}
 
 		token, err := handlers.GenerateToken()
 		if err != nil {
@@ -38,6 +76,15 @@ func HttpLogin() http.HandlerFunc {
 			Path:     "/",
 			HttpOnly: true,
 			Secure:   false, // lokal über HTTP; in Produktion mit HTTPS auf true setzen
+			SameSite: http.SameSiteLaxMode,
+			MaxAge:   60 * 60 * 24, // 24 Stunden
+		})
+		http.SetCookie(w, &http.Cookie{
+			Name:     "session_name",
+			Value:    user.Name,
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   false,
 			SameSite: http.SameSiteLaxMode,
 			MaxAge:   60 * 60 * 24, // 24 Stunden
 		})

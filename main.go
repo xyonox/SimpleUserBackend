@@ -73,7 +73,7 @@ func run() error {
 	http.HandleFunc("/helloworld", routes.HttpTest())
 	http.HandleFunc("/users", routes.HttpGetUsers(db))
 	http.HandleFunc("/user/create", routes.HttpCreateUser(db))
-	http.HandleFunc("/user/login", routes.HttpLogin())
+	http.HandleFunc("/user/login", routes.HttpLogin(db))
 	http.HandleFunc("/user/auth", routes.HttpAuthTest())
 
 	// TODO: Login logic => token, simple auth test route
