@@ -20,7 +20,26 @@ func HttpTest() http.HandlerFunc {
 
 func HttpLogin() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		http.SetCookie(w, &http.Cookie{Name: "test", Value: "123"})
+
+		token, err := handlers.GenerateToken()
+		if err != nil {
+			fmt.Println("Error: ", err)
+			_, err := w.Write([]byte(err.Error()))
+			if err != nil {
+				fmt.Println("Error: ", err)
+				return
+			}
+			return
+		}
+		http.SetCookie(w, &http.Cookie{
+			Name:     "session_token",
+			Value:    token,
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   true, // bei lokaler HTTP-Entwicklung vorübergehend false
+			SameSite: http.SameSiteLaxMode,
+			MaxAge:   60 * 60 * 24, // 24 Stunden
+		})
 
 		fmt.Println("test")
 		w.WriteHeader(http.StatusOK)
@@ -29,7 +48,7 @@ func HttpLogin() http.HandlerFunc {
 
 func HttpAuthTest() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		coockie, err := r.Cookie("test")
+		coockie, err := r.Cookie("session_token")
 		if err != nil {
 			_, err := w.Write([]byte("no cookie"))
 			if err != nil {
