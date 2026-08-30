@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 )
 
 func HttpTest() http.HandlerFunc {
@@ -58,9 +59,18 @@ func HttpLogin(db *sql.DB) http.HandlerFunc {
 			if err != nil {
 				fmt.Println("Error: ", err)
 			}
+			return
 		}
 
-		token, err := handlers.GenerateToken()
+		token, err := handlers.SetUsersToken(db, user.ID, 1)
+		if err != nil {
+			_, err := w.Write([]byte(err.Error()))
+			if err != nil {
+				fmt.Println("Error: ", err)
+			}
+			return
+		}
+
 		if err != nil {
 			fmt.Println("Error: ", err)
 			_, err := w.Write([]byte(err.Error()))
@@ -80,8 +90,8 @@ func HttpLogin(db *sql.DB) http.HandlerFunc {
 			MaxAge:   60 * 60 * 24, // 24 Stunden
 		})
 		http.SetCookie(w, &http.Cookie{
-			Name:     "session_name",
-			Value:    user.Name,
+			Name:     "session_id",
+			Value:    strconv.Itoa(user.ID),
 			Path:     "/",
 			HttpOnly: true,
 			Secure:   false,
