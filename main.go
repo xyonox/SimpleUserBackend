@@ -47,6 +47,10 @@ func loadDB() (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS sessions (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, token TEXT UNIQUE, expires_at INTEGER)")
+	if err != nil {
+		return nil, err
+	}
 
 	return db, nil
 }
