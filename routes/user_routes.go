@@ -71,15 +71,6 @@ func HttpLogin(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		if err != nil {
-			fmt.Println("Error: ", err)
-			_, err := w.Write([]byte(err.Error()))
-			if err != nil {
-				fmt.Println("Error: ", err)
-				return
-			}
-			return
-		}
 		http.SetCookie(w, &http.Cookie{
 			Name:     "session_token",
 			Value:    token,
@@ -104,9 +95,9 @@ func HttpLogin(db *sql.DB) http.HandlerFunc {
 	}
 }
 
-func HttpAuthTest() http.HandlerFunc {
+func HttpAuthTest(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		coockie, err := r.Cookie("session_token")
+		cookie, err := r.Cookie("session_token")
 		if err != nil {
 			_, err := w.Write([]byte("no cookie"))
 			if err != nil {
@@ -114,11 +105,26 @@ func HttpAuthTest() http.HandlerFunc {
 			}
 			return
 		}
-		_, err = w.Write([]byte(coockie.Value))
+
+		valid, i, err := handlers.VerifyUserToken(db, cookie.Value)
 		if err != nil {
-			fmt.Println("Error: ", err)
+			_, err := w.Write([]byte(err.Error()))
+			if err != nil {
+				fmt.Println("Error: ", err)
+				return
+			}
+			return
 		}
-		fmt.Println("cookie: ", coockie.Value)
+
+		if !valid {
+			_, err := w.Write([]byte("token is not valid"))
+			if err != nil {
+				fmt.Println("Error: ", err)
+			}
+		}
+
+		_, err = w.Write([]byte("token is valid"))
+		fmt.Println("user id: ", i)
 	}
 }
 
