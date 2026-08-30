@@ -121,6 +121,7 @@ func HttpAuthTest(db *sql.DB) http.HandlerFunc {
 			if err != nil {
 				fmt.Println("Error: ", err)
 			}
+			return
 		}
 
 		_, err = w.Write([]byte("token is valid"))
