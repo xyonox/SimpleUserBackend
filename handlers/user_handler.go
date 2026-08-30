@@ -25,7 +25,7 @@ func GetUsers(db *sql.DB) ([]*User, error) {
 		}
 	}(rows)
 
-	users := []*User{}
+	var users []*User
 	for rows.Next() {
 		user := User{}
 		err := rows.Scan(&user.ID, &user.Name)
