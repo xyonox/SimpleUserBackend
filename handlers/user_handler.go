@@ -46,6 +46,20 @@ func GetUser(db *sql.DB, id int) (User, error) {
 	return user, nil
 }
 
+func SetUsersToken(db *sql.DB, id int, daysOfExpiring int) (error, string) {
+	token, err := GenerateToken()
+	if err != nil {
+		return err, ""
+	}
+
+	_, err = db.Exec("DELETE FROM sessions WHERE user_id = ?", id)
+	if err != nil {
+		return err, ""
+	}
+	_, err = db.Exec("INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, ?)", id, token, daysOfExpiring)
+	return err, token
+}
+
 func GetUserByName(db *sql.DB, name string) (User, error) {
 	row := db.QueryRow("SELECT * FROM users WHERE name = ?", name)
 	user := User{}
