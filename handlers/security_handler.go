@@ -26,7 +26,7 @@ func GenerateToken() (string, error) {
 	return base64.RawURLEncoding.EncodeToString(bytes), nil
 }
 
-func hashToken(token string) string {
+func HashToken(token string) string {
 	sum := sha256.Sum256([]byte(token))
 	return base64.RawURLEncoding.EncodeToString(sum[:])
 }
