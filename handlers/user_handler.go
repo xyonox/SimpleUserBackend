@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
+	"time"
 )
 
 type User struct {
@@ -46,18 +48,42 @@ func GetUser(db *sql.DB, id int) (User, error) {
 	return user, nil
 }
 
-func SetUsersToken(db *sql.DB, id int, daysOfExpiring int) (error, string) {
+func SetUsersToken(db *sql.DB, id int, daysOfExpiring int) (string, error) {
 	token, err := GenerateToken()
 	if err != nil {
-		return err, ""
+		return "", err
 	}
 
 	_, err = db.Exec("DELETE FROM sessions WHERE user_id = ?", id)
 	if err != nil {
-		return err, ""
+		return "", err
 	}
-	_, err = db.Exec("INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, ?)", id, token, daysOfExpiring)
-	return err, token
+
+	expiresAt := time.Now().Add(time.Duration(daysOfExpiring) * time.Hour * 24)
+
+	hashedToken := HashToken(token)
+
+	_, err = db.Exec("INSERT INTO sessions (user_id, token_hash, expires_at) VALUES (?, ?, ?)", id, hashedToken, expiresAt.Unix())
+	return token, err
+}
+
+func VerifyUserToken(db *sql.DB, token string) (bool, int, error) {
+
+	var userID int
+	err := db.QueryRow(
+		`SELECT user_id
+     FROM sessions
+     WHERE token_hash = ? AND expires_at > ?`,
+		HashToken(token),
+		time.Now().Unix(),
+	).Scan(&userID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, -1, nil
+	}
+	if err != nil {
+		return false, -1, err
+	}
+	return true, userID, nil
 }
 
 func GetUserByName(db *sql.DB, name string) (User, error) {
