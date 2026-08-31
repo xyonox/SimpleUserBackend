@@ -25,6 +25,7 @@ func HttpLogin(db *sql.DB) http.HandlerFunc {
 		if r.Method != http.MethodPost {
 			_, err := w.Write([]byte("Method not allowed"))
 			if err != nil {
+				w.WriteHeader(http.StatusMethodNotAllowed)
 				fmt.Println("Error: ", err)
 				return
 			}
@@ -36,6 +37,7 @@ func HttpLogin(db *sql.DB) http.HandlerFunc {
 		var sentUser handlers.User
 		err := json.NewDecoder(r.Body).Decode(&sentUser)
 		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
 			responseBody["error"] = err.Error()
 			jsonBody, _ := json.Marshal(responseBody)
 			_, err := w.Write(jsonBody)
@@ -46,6 +48,7 @@ func HttpLogin(db *sql.DB) http.HandlerFunc {
 
 		user, err := handlers.GetUserByName(db, sentUser.Name)
 		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
 			responseBody["error"] = err.Error()
 			jsonBody, _ := json.Marshal(responseBody)
 			_, err := w.Write(jsonBody)
@@ -72,6 +75,7 @@ func HttpLogin(db *sql.DB) http.HandlerFunc {
 
 		token, err := handlers.SetUsersToken(db, user.ID, 1)
 		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
 			responseBody["error"] = err.Error()
 			jsonBody, _ := json.Marshal(responseBody)
 			_, err := w.Write(jsonBody)
@@ -105,6 +109,7 @@ func HttpLogin(db *sql.DB) http.HandlerFunc {
 		jsonBody, _ := json.Marshal(responseBody)
 		_, err = w.Write(jsonBody)
 		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Println("Error: ", err)
 		}
 
