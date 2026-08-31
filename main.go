@@ -80,8 +80,6 @@ func run() error {
 	http.HandleFunc("/user/login", routes.HttpLogin(db))
 	http.HandleFunc("/user/auth", routes.HttpAuthTest(db))
 
-	// TODO: Login logic => token, simple auth test route
-
 	fmt.Println("server started on port ", port)
 
 	return http.ListenAndServe(fmt.Sprintf(":%v", port), cors(http.DefaultServeMux))
