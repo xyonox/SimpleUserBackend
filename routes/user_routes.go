@@ -212,6 +212,9 @@ func HttpGetUsers(db *sql.DB) http.HandlerFunc {
 func HttpCreateUser(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+
+		responseBody := make(map[string]any)
+
 		if r.Method == http.MethodPost {
 			var user handlers.User
 			err := json.NewDecoder(r.Body).Decode(&user)
@@ -221,25 +224,44 @@ func HttpCreateUser(db *sql.DB) http.HandlerFunc {
 
 			hashedPassword, err := handlers.HashPassword(user.PasswordHash)
 			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				responseBody["error"] = err.Error()
+				jsonBody, _ := json.Marshal(responseBody)
+				_, err := w.Write(jsonBody)
 				if err != nil {
 					fmt.Println("Error: ", err)
 					return
 				}
+				return
 			}
 			user.PasswordHash = hashedPassword
 
 			_, err = db.Exec("INSERT INTO users (name, password_hash) VALUES (?, ?)", user.Name, user.PasswordHash)
 			if err != nil {
-				_, err := w.Write([]byte(err.Error()))
+				w.WriteHeader(http.StatusInternalServerError)
+				responseBody["error"] = err.Error()
+				jsonBody, _ := json.Marshal(responseBody)
+				_, err := w.Write(jsonBody)
 				if err != nil {
 					return
 				}
 				return
 			}
-			_, err = w.Write([]byte("User created"))
+			w.WriteHeader(http.StatusCreated)
+			responseBody["message"] = "User created"
+			jsonBody, _ := json.Marshal(responseBody)
+			_, err = w.Write(jsonBody)
 			if err != nil {
 				fmt.Println("Error: ", err)
 				return
+			}
+		} else {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			responseBody["error"] = "Method not allowed"
+			jsonBody, _ := json.Marshal(responseBody)
+			_, err := w.Write(jsonBody)
+			if err != nil {
+				fmt.Println("Error: ", err)
 			}
 		}
 	}
