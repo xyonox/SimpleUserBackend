@@ -22,6 +22,7 @@ func HttpTest() http.HandlerFunc {
 
 func HttpLogin(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
 		if r.Method != http.MethodPost {
 			_, err := w.Write([]byte("Method not allowed"))
 			if err != nil {
@@ -119,7 +120,7 @@ func HttpLogin(db *sql.DB) http.HandlerFunc {
 
 func HttpAuthTest(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
+		w.Header().Set("Content-Type", "application/json")
 		responseBody := make(map[string]any)
 
 		cookie, err := r.Cookie("session_token")
@@ -203,6 +204,7 @@ func HttpGetUsers(db *sql.DB) http.HandlerFunc {
 // TODO: move to a function
 func HttpCreateUser(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
 		if r.Method == http.MethodPost {
 			var user handlers.User
 			err := json.NewDecoder(r.Body).Decode(&user)
