@@ -169,10 +169,16 @@ func HttpGetUsers(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
+		responseBody := make(map[string]any)
+
 		users, err := handlers.GetUsers(db)
 		if err != nil {
-			_, err := w.Write([]byte(err.Error()))
+			w.WriteHeader(http.StatusInternalServerError)
+			responseBody["error"] = err.Error()
+			jsonBody, _ := json.Marshal(responseBody)
+			_, err := w.Write(jsonBody)
 			if err != nil {
+				fmt.Println("Error: ", err)
 				return
 			}
 			return
@@ -183,7 +189,7 @@ func HttpGetUsers(db *sql.DB) http.HandlerFunc {
 			Name string `json:"name"`
 		}
 
-		usersNonPassword := []UserNonPassword{}
+		var usersNonPassword []UserNonPassword
 		for _, user := range users {
 			usersNonPassword = append(usersNonPassword, UserNonPassword{
 				ID:   user.ID,
@@ -193,6 +199,7 @@ func HttpGetUsers(db *sql.DB) http.HandlerFunc {
 
 		jsonBody, err := json.Marshal(usersNonPassword)
 
+		w.WriteHeader(http.StatusOK)
 		_, err = w.Write(jsonBody)
 		if err != nil {
 			fmt.Println("Error: ", err)
