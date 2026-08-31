@@ -31,31 +31,39 @@ func HttpLogin(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		var sendedUser handlers.User
-		err := json.NewDecoder(r.Body).Decode(&sendedUser)
+		responseBody := make(map[string]any)
+
+		var sentUser handlers.User
+		err := json.NewDecoder(r.Body).Decode(&sentUser)
 		if err != nil {
-			_, err := w.Write([]byte(err.Error()))
+			responseBody["error"] = err.Error()
+			jsonBody, _ := json.Marshal(responseBody)
+			_, err := w.Write(jsonBody)
 			if err != nil {
 				fmt.Println("Error: ", err)
 			}
 		}
 
-		user, err := handlers.GetUserByName(db, sendedUser.Name)
+		user, err := handlers.GetUserByName(db, sentUser.Name)
 		if err != nil {
-			_, err := w.Write([]byte(err.Error()))
+			responseBody["error"] = err.Error()
+			jsonBody, _ := json.Marshal(responseBody)
+			_, err := w.Write(jsonBody)
 			if err != nil {
 				fmt.Println("Error: ", err)
 			}
 			return
 		}
 
-		passwordVerify, err := handlers.VerifyPassword(sendedUser.PasswordHash, user.PasswordHash)
+		passwordVerify, err := handlers.VerifyPassword(sentUser.PasswordHash, user.PasswordHash)
 		if err != nil {
 			return
 		}
 
 		if !passwordVerify {
-			_, err := w.Write([]byte("wrong password"))
+			responseBody["error"] = "password is not correct"
+			jsonBody, _ := json.Marshal(responseBody)
+			_, err := w.Write(jsonBody)
 			if err != nil {
 				fmt.Println("Error: ", err)
 			}
@@ -64,7 +72,9 @@ func HttpLogin(db *sql.DB) http.HandlerFunc {
 
 		token, err := handlers.SetUsersToken(db, user.ID, 1)
 		if err != nil {
-			_, err := w.Write([]byte(err.Error()))
+			responseBody["error"] = err.Error()
+			jsonBody, _ := json.Marshal(responseBody)
+			_, err := w.Write(jsonBody)
 			if err != nil {
 				fmt.Println("Error: ", err)
 			}
@@ -90,7 +100,14 @@ func HttpLogin(db *sql.DB) http.HandlerFunc {
 			MaxAge:   60 * 60 * 24, // 24 Stunden
 		})
 
-		fmt.Println("test")
+		responseBody["message"] = "Login successful"
+
+		jsonBody, _ := json.Marshal(responseBody)
+		_, err = w.Write(jsonBody)
+		if err != nil {
+			fmt.Println("Error: ", err)
+		}
+
 		w.WriteHeader(http.StatusOK)
 	}
 }
