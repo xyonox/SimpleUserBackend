@@ -119,9 +119,15 @@ func HttpLogin(db *sql.DB) http.HandlerFunc {
 
 func HttpAuthTest(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		responseBody := make(map[string]any)
+
 		cookie, err := r.Cookie("session_token")
 		if err != nil {
-			_, err := w.Write([]byte("no cookie"))
+			w.WriteHeader(http.StatusInternalServerError)
+			responseBody["error"] = err.Error()
+			jsonBody, _ := json.Marshal(responseBody)
+			_, err := w.Write(jsonBody)
 			if err != nil {
 				return
 			}
@@ -130,7 +136,10 @@ func HttpAuthTest(db *sql.DB) http.HandlerFunc {
 
 		valid, i, err := handlers.VerifyUserToken(db, cookie.Value)
 		if err != nil {
-			_, err := w.Write([]byte(err.Error()))
+			w.WriteHeader(http.StatusInternalServerError)
+			responseBody["error"] = err.Error()
+			jsonBody, _ := json.Marshal(responseBody)
+			_, err := w.Write(jsonBody)
 			if err != nil {
 				fmt.Println("Error: ", err)
 				return
@@ -139,13 +148,17 @@ func HttpAuthTest(db *sql.DB) http.HandlerFunc {
 		}
 
 		if !valid {
-			_, err := w.Write([]byte("token is not valid"))
+			w.WriteHeader(http.StatusUnauthorized)
+			responseBody["error"] = "token is not valid"
+			jsonBody, _ := json.Marshal(responseBody)
+			_, err := w.Write(jsonBody)
 			if err != nil {
 				fmt.Println("Error: ", err)
 			}
 			return
 		}
 
+		w.WriteHeader(http.StatusOK)
 		_, err = w.Write([]byte("token is valid"))
 		fmt.Println("user id: ", i)
 	}
