@@ -43,3 +43,8 @@ coming soon ...
 
 coming soon ...
 
+## Next steps
+
+- JSON Error Handling 
+- A Note App (Create, Get, Update, Delete, Share)
+- Update the Frontend (AI) and Readme.md
