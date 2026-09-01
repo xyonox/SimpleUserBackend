@@ -11,6 +11,12 @@ type Note struct {
 	UserID    int    `json:"user_id"`
 }
 
+type SimpleNote struct {
+	Title   string `json:"title"`
+	Content string `json:"content"`
+	UserID  int    `json:"user_id"`
+}
+
 func GetNotesByUserID(db *sql.DB, userID int) ([]*Note, error) {
 	rows, err := db.Query("SELECT * FROM notes WHERE user_id = ?", userID)
 	if err != nil {
