@@ -14,7 +14,6 @@ type Note struct {
 type SimpleNote struct {
 	Title   string `json:"title"`
 	Content string `json:"content"`
-	UserID  int    `json:"user_id"`
 }
 
 func GetNotesByUserID(db *sql.DB, userID int) ([]*Note, error) {
