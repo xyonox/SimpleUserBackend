@@ -7,7 +7,7 @@ The project was created as a learning project for:
 - How to manage users, authentication and authorization
 - How to use a database
 - encrypting passwords
-- how to use JWTs
+- how to use JWTs (I may forget this)
 - how to work with multiple files
 
 ## Features
