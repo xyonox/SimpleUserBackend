@@ -24,12 +24,7 @@ func HttpLogin(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method != http.MethodPost {
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			_, err := w.Write([]byte("Method not allowed"))
-			if err != nil {
-				fmt.Println("Error: ", err)
-				return
-			}
+			handlers.WriteError(w, http.StatusMethodNotAllowed, "Method not allowed")
 			return
 		}
 
@@ -38,60 +33,30 @@ func HttpLogin(db *sql.DB) http.HandlerFunc {
 		var loginRequest handlers.User
 		err := json.NewDecoder(r.Body).Decode(&loginRequest)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			responseBody["error"] = err.Error()
-			jsonBody, _ := json.Marshal(responseBody)
-			_, err := w.Write(jsonBody)
-			if err != nil {
-				fmt.Println("Error: ", err)
-			}
+			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
 		user, err := handlers.GetUserByName(db, loginRequest.Name)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			responseBody["error"] = err.Error()
-			jsonBody, _ := json.Marshal(responseBody)
-			_, err := w.Write(jsonBody)
-			if err != nil {
-				fmt.Println("Error: ", err)
-			}
+			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
 		passwordVerify, err := handlers.VerifyPassword(loginRequest.PasswordHash, user.PasswordHash)
 		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			responseBody["error"] = "password is not correct"
-			jsonBody, _ := json.Marshal(responseBody)
-			_, err := w.Write(jsonBody)
-			if err != nil {
-				fmt.Println("Error: ", err)
-			}
+			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
 		if !passwordVerify {
-			w.WriteHeader(http.StatusUnauthorized)
-			responseBody["error"] = "password is not correct"
-			jsonBody, _ := json.Marshal(responseBody)
-			_, err := w.Write(jsonBody)
-			if err != nil {
-				fmt.Println("Error: ", err)
-			}
+			handlers.WriteError(w, http.StatusUnauthorized, "Password verification failed")
 			return
 		}
 
 		token, err := handlers.SetUsersToken(db, user.ID, 1)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			responseBody["error"] = err.Error()
-			jsonBody, _ := json.Marshal(responseBody)
-			_, err := w.Write(jsonBody)
-			if err != nil {
-				fmt.Println("Error: ", err)
-			}
+			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -119,8 +84,8 @@ func HttpLogin(db *sql.DB) http.HandlerFunc {
 		jsonBody, _ := json.Marshal(responseBody)
 		_, err = w.Write(jsonBody)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Println("Error: ", err)
+			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
 		}
 
 		w.WriteHeader(http.StatusOK)
@@ -132,39 +97,13 @@ func HttpAuthTest(db *sql.DB) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		responseBody := make(map[string]any)
 
-		cookie, err := r.Cookie("session_token")
+		authBool, i, err := handlers.Authenticate(db, r)
 		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			responseBody["error"] = err.Error()
-			jsonBody, _ := json.Marshal(responseBody)
-			_, err := w.Write(jsonBody)
-			if err != nil {
-				return
-			}
+			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-
-		valid, i, err := handlers.VerifyUserToken(db, cookie.Value)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			responseBody["error"] = err.Error()
-			jsonBody, _ := json.Marshal(responseBody)
-			_, err := w.Write(jsonBody)
-			if err != nil {
-				fmt.Println("Error: ", err)
-				return
-			}
-			return
-		}
-
-		if !valid {
-			w.WriteHeader(http.StatusUnauthorized)
-			responseBody["error"] = "token is not valid"
-			jsonBody, _ := json.Marshal(responseBody)
-			_, err := w.Write(jsonBody)
-			if err != nil {
-				fmt.Println("Error: ", err)
-			}
+		if !authBool {
+			handlers.WriteError(w, http.StatusUnauthorized, "Unauthorized")
 			return
 		}
 
@@ -180,18 +119,9 @@ func HttpGetUsers(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
-		responseBody := make(map[string]any)
-
 		users, err := handlers.GetUsers(db)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			responseBody["error"] = err.Error()
-			jsonBody, _ := json.Marshal(responseBody)
-			_, err := w.Write(jsonBody)
-			if err != nil {
-				fmt.Println("Error: ", err)
-				return
-			}
+			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -213,7 +143,7 @@ func HttpGetUsers(db *sql.DB) http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 		_, err = w.Write(jsonBody)
 		if err != nil {
-			fmt.Println("Error: ", err)
+			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 	}
@@ -230,39 +160,20 @@ func HttpCreateUser(db *sql.DB) http.HandlerFunc {
 			var user handlers.User
 			err := json.NewDecoder(r.Body).Decode(&user)
 			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				responseBody["error"] = err.Error()
-				jsonBody, _ := json.Marshal(responseBody)
-				_, err := w.Write(jsonBody)
-				if err != nil {
-					fmt.Println("Error: ", err)
-				}
+				handlers.WriteError(w, http.StatusInternalServerError, err.Error())
 				return
 			}
 
 			hashedPassword, err := handlers.HashPassword(user.PasswordHash)
 			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				responseBody["error"] = err.Error()
-				jsonBody, _ := json.Marshal(responseBody)
-				_, err := w.Write(jsonBody)
-				if err != nil {
-					fmt.Println("Error: ", err)
-					return
-				}
+				handlers.WriteError(w, http.StatusInternalServerError, err.Error())
 				return
 			}
 			user.PasswordHash = hashedPassword
 
 			_, err = db.Exec("INSERT INTO users (name, password_hash) VALUES (?, ?)", user.Name, user.PasswordHash)
 			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				responseBody["error"] = err.Error()
-				jsonBody, _ := json.Marshal(responseBody)
-				_, err := w.Write(jsonBody)
-				if err != nil {
-					return
-				}
+				handlers.WriteError(w, http.StatusInternalServerError, err.Error())
 				return
 			}
 			w.WriteHeader(http.StatusCreated)
@@ -270,17 +181,12 @@ func HttpCreateUser(db *sql.DB) http.HandlerFunc {
 			jsonBody, _ := json.Marshal(responseBody)
 			_, err = w.Write(jsonBody)
 			if err != nil {
-				fmt.Println("Error: ", err)
+				handlers.WriteError(w, http.StatusInternalServerError, err.Error())
 				return
 			}
 		} else {
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			responseBody["error"] = "Method not allowed"
-			jsonBody, _ := json.Marshal(responseBody)
-			_, err := w.Write(jsonBody)
-			if err != nil {
-				fmt.Println("Error: ", err)
-			}
+			handlers.WriteError(w, http.StatusMethodNotAllowed, "Method not allowed")
+			return
 		}
 	}
 }

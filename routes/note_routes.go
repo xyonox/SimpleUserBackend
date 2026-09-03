@@ -15,109 +15,31 @@ func HttpCreateNote(db *sql.DB) http.HandlerFunc {
 
 		responseBody := make(map[string]any)
 
-		// TODO implement auth
 		authBool, userID, err := handlers.Authenticate(db, r)
 		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			responseBody["error"] = fmt.Sprintf("Authentication failed: %s", err.Error())
-			jsonBody, err := json.Marshal(responseBody)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				_, err := w.Write([]byte(err.Error()))
-				if err != nil {
-					fmt.Println("Error: ", err)
-					return
-				}
-				fmt.Println("Error: ", err)
-				return
-			}
-			_, err = w.Write(jsonBody)
-			if err != nil {
-				fmt.Println("Error: ", err)
-			}
+			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-
 		if !authBool {
-			w.WriteHeader(http.StatusUnauthorized)
-			responseBody["error"] = "Authentication failed"
-			jsonBody, err := json.Marshal(responseBody)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				_, err := w.Write([]byte(err.Error()))
-				if err != nil {
-					fmt.Println("Error: ", err)
-					return
-				}
-				fmt.Println("Error: ", err)
-				return
-			}
-			_, err = w.Write(jsonBody)
-			if err != nil {
-				fmt.Println("Error: ", err)
-			}
+			handlers.WriteError(w, http.StatusUnauthorized, "Unauthorized")
 			return
 		}
 
 		if r.Method != http.MethodPost {
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			responseBody["error"] = "Method not allowed"
-			jsonBody, err := json.Marshal(responseBody)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				_, err := w.Write([]byte(err.Error()))
-				if err != nil {
-					fmt.Println("Error: ", err)
-					return
-				}
-				fmt.Println("Error: ", err)
-				return
-			}
-			_, err = w.Write(jsonBody)
-			if err != nil {
-				fmt.Println("Error: ", err)
-			}
+			handlers.WriteError(w, http.StatusMethodNotAllowed, "Method not allowed")
+			return
 		}
 
 		var simpleNote handlers.SimpleNote
 		err = json.NewDecoder(r.Body).Decode(&simpleNote)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			responseBody["error"] = "Method not allowed"
-			jsonBody, err := json.Marshal(responseBody)
-			if err != nil {
-				_, err := w.Write([]byte(err.Error()))
-				if err != nil {
-					fmt.Println("Error: ", err)
-					return
-				}
-				fmt.Println("Error: ", err)
-				return
-			}
-			_, err = w.Write(jsonBody)
-			if err != nil {
-				fmt.Println("Error: ", err)
-			}
+			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
 		}
 
 		err = handlers.CreateNote(db, simpleNote.Title, simpleNote.Content, userID)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			responseBody["error"] = "Method not allowed"
-			jsonBody, err := json.Marshal(responseBody)
-			if err != nil {
-				_, err := w.Write([]byte(err.Error()))
-				if err != nil {
-					fmt.Println("Error: ", err)
-					return
-				}
-				fmt.Println("Error: ", err)
-				return
-			}
-			_, err = w.Write(jsonBody)
-			if err != nil {
-				fmt.Println("Error: ", err)
-			}
+			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
 		}
 		w.WriteHeader(http.StatusCreated)
 		responseBody["message"] = "Note created"
@@ -126,5 +48,17 @@ func HttpCreateNote(db *sql.DB) http.HandlerFunc {
 		if err != nil {
 			fmt.Println("Error: ", err)
 		}
+	}
+}
+
+func HttpUpdateNote(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		if r.Method != http.MethodPut {
+			handlers.WriteError(w, http.StatusMethodNotAllowed, "Method not allowed")
+			return
+		}
+
 	}
 }
