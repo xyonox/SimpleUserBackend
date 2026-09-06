@@ -92,6 +92,7 @@ func HttpUpdateNote(db *sql.DB) http.HandlerFunc {
 		}
 		if !verifyBool {
 			handlers.WriteError(w, http.StatusUnauthorized, "Unauthorized: Note does not belong to user")
+			return
 		}
 
 		err = handlers.UpdateNote(db, &noteRq)
@@ -142,6 +143,7 @@ func HttpDeleteNote(db *sql.DB) http.HandlerFunc {
 		}
 		if !verifyBool {
 			handlers.WriteError(w, http.StatusUnauthorized, "Unauthorized: Note does not belong to user")
+			return
 		}
 
 		err = handlers.DeleteNote(db, noteRq.ID)

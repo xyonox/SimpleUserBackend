@@ -2,10 +2,15 @@ package main
 
 import (
 	"SimpleUserBackend/routes"
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	_ "modernc.org/sqlite"
 )
@@ -22,7 +27,7 @@ func cors(next http.Handler) http.Handler {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE, PUT, PATCH, UPDATE")
 			w.Header().Add("Vary", "Origin")
 		}
 
@@ -94,11 +99,28 @@ func run() error {
 	if db == nil {
 		return errors.New("db is nil")
 	}
+	defer db.Close()
 
 	err = db.Ping()
 	if err == nil {
 		fmt.Println("PONG!")
+	} else {
+		return err
 	}
+
+	server := &http.Server{
+		Addr:              fmt.Sprintf(":%d", port),
+		Handler:           cors(http.DefaultServeMux),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+
+	signals := make(chan os.Signal, 1)
+
+	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(signals)
 
 	fmt.Println("db is ready")
 
@@ -116,9 +138,35 @@ func run() error {
 	http.HandleFunc("/note/delete", routes.HttpDeleteNote(db))
 	http.HandleFunc("/note/get", routes.HttpGetNoteByID(db))
 
-	fmt.Println("server started on port ", port)
+	fmt.Println("starting server on port", port)
 
-	return http.ListenAndServe(fmt.Sprintf(":%v", port), cors(http.DefaultServeMux))
+	// AI generated (Please learn to read this and to understand it) (Learning todo channels)
+	serverErrors := make(chan error, 1)
+	go func() {
+		serverErrors <- server.ListenAndServe()
+	}()
+
+	select {
+	case err := <-serverErrors:
+		if errors.Is(err, http.ErrServerClosed) {
+			return nil
+		}
+		return err
+	case <-signals:
+		fmt.Println("shutting down server")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := server.Shutdown(ctx); err != nil {
+		closeErr := server.Close()
+		return errors.Join(fmt.Errorf("server shutdown: %w", err), closeErr)
+	}
+
+	if err := <-serverErrors; !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+	return nil
 }
 
 func main() {
