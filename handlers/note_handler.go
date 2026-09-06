@@ -55,7 +55,7 @@ func GetNotesByUserID(db *sql.DB, userID int) ([]*Note, error) {
 	return notes, nil
 }
 
-func getNoteByID(db *sql.DB, id int) (*Note, error) {
+func GetNoteByID(db *sql.DB, id int) (*Note, error) {
 	row := db.QueryRow("SELECT * FROM notes WHERE id = ?", id)
 	note := Note{}
 	err := row.Scan(&note.ID, &note.Title, &note.Content, &note.CreatedAt, &note.UpdatedAt, &note.UserID)
