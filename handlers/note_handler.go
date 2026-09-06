@@ -16,6 +16,16 @@ type SimpleNote struct {
 	Content string `json:"content"`
 }
 
+func VerifyNoteOwnership(db *sql.DB, noteID int, userID int) (bool, error) {
+	row := db.QueryRow("SELECT * FROM notes WHERE id = ? AND user_id = ?", noteID, userID)
+	note := Note{}
+	err := row.Scan(&note.ID, &note.Title, &note.Content, &note.CreatedAt, &note.UpdatedAt, &note.UserID)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 func GetNotesByUserID(db *sql.DB, userID int) ([]*Note, error) {
 	rows, err := db.Query("SELECT * FROM notes WHERE user_id = ?", userID)
 	if err != nil {
