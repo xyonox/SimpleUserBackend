@@ -55,7 +55,7 @@ func HttpUpdateNote(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
-		authBool, _, err := handlers.Authenticate(db, r)
+		authBool, userID, err := handlers.Authenticate(db, r)
 		if err != nil {
 			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -85,6 +85,15 @@ func HttpUpdateNote(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
+		verifyBool, err := handlers.VerifyNoteOwnership(db, noteRq.ID, userID)
+		if err != nil {
+			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if !verifyBool {
+			handlers.WriteError(w, http.StatusUnauthorized, "Unauthorized: Note does not belong to user")
+		}
+
 		err = handlers.UpdateNote(db, &noteRq)
 		if err != nil {
 			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
@@ -100,7 +109,7 @@ func HttpDeleteNote(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
-		authBool, _, err := handlers.Authenticate(db, r)
+		authBool, userID, err := handlers.Authenticate(db, r)
 		if err != nil {
 			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -115,5 +124,31 @@ func HttpDeleteNote(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
+		var noteRq handlers.Note
+		err = json.NewDecoder(r.Body).Decode(&noteRq)
+		if err != nil {
+			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
+		}
+
+		if noteRq.ID == 0 {
+			handlers.WriteError(w, http.StatusBadRequest, "ID is required")
+			return
+		}
+
+		verifyBool, err := handlers.VerifyNoteOwnership(db, noteRq.ID, userID)
+		if err != nil {
+			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if !verifyBool {
+			handlers.WriteError(w, http.StatusUnauthorized, "Unauthorized: Note does not belong to user")
+		}
+
+		err = handlers.DeleteNote(db, noteRq.ID)
+		if err != nil {
+			return
+		}
+
+		handlers.WriteJSON(w, http.StatusOK, "Note deleted")
 	}
 }
