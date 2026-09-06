@@ -152,3 +152,80 @@ func HttpDeleteNote(db *sql.DB) http.HandlerFunc {
 		handlers.WriteJSON(w, http.StatusOK, "Note deleted")
 	}
 }
+
+func HttpGetNotes(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		authBool, userID, err := handlers.Authenticate(db, r)
+		if err != nil {
+			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if !authBool {
+			handlers.WriteError(w, http.StatusUnauthorized, "Unauthorized")
+			return
+		}
+
+		if r.Method != http.MethodGet {
+			handlers.WriteError(w, http.StatusMethodNotAllowed, "Method not allowed")
+			return
+		}
+
+		list, err := handlers.GetNotesByUserID(db, userID)
+		if err != nil {
+			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		handlers.WriteJSON(w, http.StatusOK, list)
+	}
+}
+
+func HttpGetNoteByID(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		authBool, userID, err := handlers.Authenticate(db, r)
+		if err != nil {
+			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if !authBool {
+			handlers.WriteError(w, http.StatusUnauthorized, "Unauthorized")
+			return
+		}
+
+		if r.Method != http.MethodGet {
+			handlers.WriteError(w, http.StatusMethodNotAllowed, "Method not allowed")
+			return
+		}
+
+		var noteRq handlers.Note
+		err = json.NewDecoder(r.Body).Decode(&noteRq)
+		if err != nil {
+			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		verifyBool, err := handlers.VerifyNoteOwnership(db, noteRq.ID, userID)
+		if err != nil {
+			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		if !verifyBool {
+			handlers.WriteError(w, http.StatusUnauthorized, "Unauthorized: Note does not belong to user")
+			return
+		}
+
+		note, err := handlers.GetNoteByID(db, noteRq.ID)
+		if err != nil {
+			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		handlers.WriteJSON(w, http.StatusOK, note)
+
+	}
+}
