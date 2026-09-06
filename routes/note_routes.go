@@ -60,5 +60,28 @@ func HttpUpdateNote(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
+		var noteRq handlers.Note
+		err := json.NewDecoder(r.Body).Decode(&noteRq)
+		if err != nil {
+			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
+		}
+
+		if noteRq.ID == 0 {
+			handlers.WriteError(w, http.StatusBadRequest, "ID is required")
+			return
+		}
+		if noteRq.Title == "" && noteRq.Content == "" {
+			handlers.WriteError(w, http.StatusBadRequest, "Title or Content is required")
+			return
+		}
+
+		err = handlers.UpdateNote(db, &noteRq)
+		if err != nil {
+			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		handlers.WriteJSON(w, http.StatusOK, "Note updated")
+
 	}
 }

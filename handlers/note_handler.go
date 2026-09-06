@@ -64,8 +64,8 @@ func UpdateNote(db *sql.DB, note *Note) error {
 		return err
 	}
 	return nil
-}
 
+}
 func DeleteNote(db *sql.DB, noteID int) error {
 	_, err := db.Exec("DELETE FROM notes WHERE id = ?", noteID)
 	if err != nil {
