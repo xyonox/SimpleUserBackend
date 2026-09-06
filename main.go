@@ -110,6 +110,12 @@ func run() error {
 	http.HandleFunc("/user/login", routes.HttpLogin(db))
 	http.HandleFunc("/user/auth", routes.HttpAuthTest(db))
 
+	http.HandleFunc("/notes", routes.HttpGetNotes(db))
+	http.HandleFunc("/note/create", routes.HttpCreateNote(db))
+	http.HandleFunc("/note/update", routes.HttpUpdateNote(db))
+	http.HandleFunc("/note/delete", routes.HttpDeleteNote(db))
+	http.HandleFunc("/note/get", routes.HttpGetNoteByID(db))
+
 	fmt.Println("server started on port ", port)
 
 	return http.ListenAndServe(fmt.Sprintf(":%v", port), cors(http.DefaultServeMux))
