@@ -1,6 +1,9 @@
 package handlers
 
-import "database/sql"
+import (
+	"database/sql"
+	"errors"
+)
 
 type Note struct {
 	ID        int    `json:"id"`
@@ -20,6 +23,9 @@ func VerifyNoteOwnership(db *sql.DB, noteID int, userID int) (bool, error) {
 	row := db.QueryRow("SELECT * FROM notes WHERE id = ? AND user_id = ?", noteID, userID)
 	note := Note{}
 	err := row.Scan(&note.ID, &note.Title, &note.Content, &note.CreatedAt, &note.UpdatedAt, &note.UserID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
 	if err != nil {
 		return false, err
 	}
