@@ -55,13 +55,23 @@ func HttpUpdateNote(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
+		authBool, _, err := handlers.Authenticate(db, r)
+		if err != nil {
+			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if !authBool {
+			handlers.WriteError(w, http.StatusUnauthorized, "Unauthorized")
+			return
+		}
+
 		if r.Method != http.MethodPut {
 			handlers.WriteError(w, http.StatusMethodNotAllowed, "Method not allowed")
 			return
 		}
 
 		var noteRq handlers.Note
-		err := json.NewDecoder(r.Body).Decode(&noteRq)
+		err = json.NewDecoder(r.Body).Decode(&noteRq)
 		if err != nil {
 			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
 		}
@@ -82,6 +92,28 @@ func HttpUpdateNote(db *sql.DB) http.HandlerFunc {
 		}
 
 		handlers.WriteJSON(w, http.StatusOK, "Note updated")
+
+	}
+}
+
+func HttpDeleteNote(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		authBool, _, err := handlers.Authenticate(db, r)
+		if err != nil {
+			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if !authBool {
+			handlers.WriteError(w, http.StatusUnauthorized, "Unauthorized")
+			return
+		}
+
+		if r.Method != http.MethodDelete {
+			handlers.WriteError(w, http.StatusMethodNotAllowed, "Method not allowed")
+			return
+		}
 
 	}
 }
