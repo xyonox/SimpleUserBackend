@@ -12,7 +12,7 @@
       <div>
         <p class="eyebrow">SimpleUserBackend</p>
         <h1>Dein kleiner API-Playground.</h1>
-        <p class="subtitle">Registrierung, Login, Authentifizierung und Benutzerliste an einem Ort testen.</p>
+        <p class="subtitle">Accounts, Sessions und deine Notizen. Alle API-Tests an einem Ort.</p>
       </div>
       <div class="status-pill"><span id="statusDot"></span><span id="statusText">Nicht authentifiziert</span></div>
     </section>
@@ -23,10 +23,10 @@
         <input id="apiBase" value="http://localhost:8080" spellcheck="false">
         <button id="helloButton" class="button secondary">Verbindung testen</button>
       </div>
-      <p class="hint">Das Frontend kann separat geöffnet werden. Bei einer anderen Origin muss dein Go-Backend CORS erlauben.</p>
+      <p class="hint">Über <code>http://localhost:5500</code> öffnen und für das Backend ebenfalls <code>localhost</code> verwenden. So funktioniert die Cookie-Session auch zwischen den Ports.</p>
     </section>
 
-    <div id="message" class="message hidden"></div>
+    <div id="message" class="message hidden" role="status" aria-live="polite"></div>
 
     <section class="grid">
       <div class="card panel">
@@ -37,7 +37,7 @@
 
         <form id="loginPanel" class="form-panel active">
           <h2>Willkommen zurück</h2>
-          <p class="muted">Erzeugt aktuell eine Test-Session über <code>/user/login</code>.</p>
+          <p class="muted">Melde dich an, um deine eigenen Notizen zu verwalten.</p>
           <label for="loginName">Name</label>
           <input id="loginName" name="name" placeholder="max" autocomplete="username" required>
           <label for="loginPassword">Passwort</label>
@@ -59,18 +59,75 @@
       <div class="card panel main-panel">
         <div class="panel-heading">
           <div><p class="eyebrow">Geschützter Bereich</p><h2>Dashboard</h2></div>
-          <button id="logoutButton" class="button ghost">Session löschen</button>
+          <button id="switchAccountButton" class="button ghost">Account wechseln</button>
         </div>
-        <p class="muted">Teste hier die Authentifizierung und die Benutzerabfrage.</p>
+        <p class="muted">Prüfe deine Session oder lade alle Benutzer. Hier erscheint auch die letzte Antwort deiner Notiz-Anfragen.</p>
         <div class="actions">
           <button id="authButton" class="button secondary">Auth prüfen</button>
           <button id="usersButton" class="button secondary">Benutzer laden</button>
         </div>
-        <pre id="result" class="result">Noch keine Anfrage ausgeführt.</pre>
+        <p id="requestMeta" class="request-meta" aria-live="polite">Noch keine Anfrage ausgeführt.</p>
+        <pre id="result" class="result" tabindex="0" aria-label="Letzte API-Antwort">Die API-Antwort erscheint hier.</pre>
       </div>
     </section>
 
-    <footer>API Playground · Requests werden mit <code>credentials: include</code> gesendet.</footer>
+    <section class="card panel notes-panel" aria-labelledby="notesHeading">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Dein Notizbuch</p>
+          <h2 id="notesHeading">Notizen <span id="notesCount" class="count-badge">–</span></h2>
+        </div>
+        <div class="heading-actions">
+          <button id="notesButton" class="button secondary">Notizen laden</button>
+          <button id="newNoteButton" class="button primary">Neue Notiz</button>
+        </div>
+      </div>
+      <p class="muted">Erstellen, lesen, bearbeiten und löschen – direkt mit deiner aktuellen Session.</p>
+      <label class="check-label" for="anonymousNotes">
+        <input id="anonymousNotes" type="checkbox">
+        Notiz-Anfragen ohne Session testen
+      </label>
+      <p class="hint">Damit kannst du den Zugriffsschutz prüfen. Deine gespeicherte Session bleibt erhalten.</p>
+
+      <div class="notes-layout">
+        <div class="notes-sidebar">
+          <label for="noteSearch">Notizen durchsuchen</label>
+          <input id="noteSearch" type="search" placeholder="Titel, Inhalt oder ID …">
+          <p id="notesState" class="empty-state" role="status">Lade deine Notizen oder lege eine neue an.</p>
+          <div id="notesList" class="notes-list" aria-label="Deine Notizen"></div>
+        </div>
+
+        <div class="note-workspace">
+          <form id="noteLookupForm" class="note-lookup">
+            <label for="lookupNoteId">Einzelne Notiz per ID laden</label>
+            <div class="toolbar-row">
+              <input id="lookupNoteId" name="id" type="number" min="1" step="1" placeholder="z. B. 1" required>
+              <button class="button secondary" type="submit">ID laden</button>
+            </div>
+            <p class="hint">Teste hier auch eine fremde oder nicht vorhandene ID.</p>
+          </form>
+
+          <form id="noteForm">
+            <div class="editor-heading">
+              <h3 id="editorHeading">Neue Notiz</h3>
+              <span id="editorBadge" class="count-badge">Entwurf</span>
+            </div>
+            <label for="noteTitle">Titel</label>
+            <input id="noteTitle" name="title" placeholder="Was möchtest du festhalten?" required>
+            <label for="noteContent">Inhalt</label>
+            <textarea id="noteContent" name="content" rows="7" placeholder="Platz für Gedanken, Ideen und einen ersten API-Test …"></textarea>
+            <p id="noteMetadata" class="hint">Beim Erstellen vergibt das Backend eine ID und Zeitstempel.</p>
+            <div class="editor-actions">
+              <button id="saveNoteButton" class="button primary" type="submit">Notiz erstellen</button>
+              <button id="deleteNoteButton" class="button danger" type="button" disabled>Notiz löschen</button>
+            </div>
+            <p id="notesFeedback" class="hint" role="status" aria-live="polite">Bereit für deinen ersten Test.</p>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <footer>API Playground · Anfragen verwenden deine Cookie-Session, außer beim Test ohne Session.</footer>
   </main>
   <script src="app.js"></script>
 </body>
