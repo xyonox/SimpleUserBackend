@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 )
 
 func HttpCreateNote(db *sql.DB) http.HandlerFunc {
@@ -33,7 +34,8 @@ func HttpCreateNote(db *sql.DB) http.HandlerFunc {
 		var simpleNote handlers.SimpleNote
 		err = json.NewDecoder(r.Body).Decode(&simpleNote)
 		if err != nil {
-			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
+			handlers.WriteError(w, http.StatusBadRequest, err.Error())
+			return
 		}
 
 		err = handlers.CreateNote(db, simpleNote.Title, simpleNote.Content, userID)
@@ -73,7 +75,8 @@ func HttpUpdateNote(db *sql.DB) http.HandlerFunc {
 		var noteRq handlers.Note
 		err = json.NewDecoder(r.Body).Decode(&noteRq)
 		if err != nil {
-			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
+			handlers.WriteError(w, http.StatusBadRequest, err.Error())
+			return
 		}
 
 		if noteRq.ID == 0 {
@@ -128,7 +131,8 @@ func HttpDeleteNote(db *sql.DB) http.HandlerFunc {
 		var noteRq handlers.Note
 		err = json.NewDecoder(r.Body).Decode(&noteRq)
 		if err != nil {
-			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
+			handlers.WriteError(w, http.StatusBadRequest, err.Error())
+			return
 		}
 
 		if noteRq.ID == 0 {
@@ -148,6 +152,7 @@ func HttpDeleteNote(db *sql.DB) http.HandlerFunc {
 
 		err = handlers.DeleteNote(db, noteRq.ID)
 		if err != nil {
+			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -203,14 +208,13 @@ func HttpGetNoteByID(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		var noteRq handlers.Note
-		err = json.NewDecoder(r.Body).Decode(&noteRq)
-		if err != nil {
-			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
+		noteID, err := strconv.Atoi(r.URL.Query().Get("id"))
+		if err != nil || noteID <= 0 {
+			handlers.WriteError(w, http.StatusBadRequest, "A positive id query parameter is required")
 			return
 		}
 
-		verifyBool, err := handlers.VerifyNoteOwnership(db, noteRq.ID, userID)
+		verifyBool, err := handlers.VerifyNoteOwnership(db, noteID, userID)
 		if err != nil {
 			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -221,7 +225,7 @@ func HttpGetNoteByID(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		note, err := handlers.GetNoteByID(db, noteRq.ID)
+		note, err := handlers.GetNoteByID(db, noteID)
 		if err != nil {
 			handlers.WriteError(w, http.StatusInternalServerError, err.Error())
 			return

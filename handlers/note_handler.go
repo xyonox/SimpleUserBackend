@@ -37,12 +37,9 @@ func GetNotesByUserID(db *sql.DB, userID int) ([]*Note, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = rows.Close()
-	if err != nil {
-		return nil, err
-	}
+	defer rows.Close()
 
-	var notes []*Note
+	notes := make([]*Note, 0)
 	for rows.Next() {
 		note := Note{}
 		err := rows.Scan(&note.ID, &note.Title, &note.Content, &note.CreatedAt, &note.UpdatedAt, &note.UserID)
@@ -52,7 +49,7 @@ func GetNotesByUserID(db *sql.DB, userID int) ([]*Note, error) {
 		notes = append(notes, &note)
 	}
 
-	return notes, nil
+	return notes, rows.Err()
 }
 
 func GetNoteByID(db *sql.DB, id int) (*Note, error) {
